@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def process_dummy_records(caa_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -74,3 +75,48 @@ def remove_interline_pax(caa_df: pd.DataFrame) -> pd.DataFrame:
     caa_df.reset_index(drop=True, inplace=True)
 
     return caa_df
+
+
+def apply_last_mode(row: pd.Series) -> pd.Series:
+    # if MODEC and MODEB are empty the last mode should be MODEA
+    if row['MODEC'] in ['No Mode', np.NaN] and row['MODEB'] in ['No Mode', np.NaN]:
+        return row['MODEA']
+    # if only MODEC is empty the last mode should be MODEB
+    elif row['MODEC'] in ['No Mode', np.NaN]:
+        return row['MODEB']
+    # if MODEC has a value, use that for the last mode
+    else:
+        return row['MODEC']
+    
+def apply_2ndlast_mode(row: pd.Series) -> str:
+    # if MODEC and MODEB are empty the second-to-last mode should be MODEA
+    if row['MODEC'] in ['No Mode', np.NaN] and row['MODEB'] in ['No Mode', np.NaN]:
+        return 'No Mode'
+    # if only MODEC is empty the second-to-last mode should be MODEB
+    elif row['MODEC'] in ['No Mode', np.NaN]:
+        return row['MODEA']
+    # if MODEB has a value, use that for the last mode
+    else:
+        return row['MODEB']
+    
+def apply_3rdlast_mode(row):
+    # if MODEC is empty there is no third-to-last mode
+    if row['MODEC'] in ['No Mode', np.NaN]:    
+        return 'No Mode'
+    # if MODEC is not empty use MODEA as the third-to-last mode
+    else:
+        return row['MODEA']
+    
+
+
+def apply_contains_mode(row: pd.Series, mode: str|list[str]) -> pd.Series:
+    # returns true or false based on wether any of the modes contain the mode passed as an argument
+
+    if type(mode) != list:
+        mode = [mode]
+    
+    return (
+        row['Last'] in mode or
+        row['2ndLast'] in mode or
+        row['3rdLast'] in mode
+    )
